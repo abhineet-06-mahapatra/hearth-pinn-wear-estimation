@@ -1,0 +1,17 @@
+parameter,symbol,unit,value_in_simulator,literature_range,source,status,notes
+Initial carbon block thickness,L0,m,1.00,,,placeholder,Hearth sidewall carbon thickness - check typical designs
+Minimum remaining thickness,L_MIN,m,0.40,,,modelling choice,Keeps thermocouples inside refractory
+Thermocouple depths from cold face,TC_POS,m,"0.10; 0.20; 0.30",,,placeholder,Check typical thermocouple spacing in hearth sidewalls
+Carbon block conductivity,k_c,W/m.K,15,,,placeholder,Depends on grade and temperature - give a range and run sensitivity
+Skull (solidified iron) conductivity,k_s,W/m.K,30,,,placeholder,
+Stave + cooling water resistance,R_cool,m2.K/W,0.02,,,placeholder,
+Iron solidification isotherm,T_SOL,C,1150,,,placeholder,Boundary of protective skull - confirm in papers
+Cooling water temperature,T_water,C,40,,,placeholder,
+Effective hot-face heat transfer coefficient,h,W/m2.K,60,,,TUNED - not measured,Tuned so skull forms as lining thins - must justify or replace using literature
+Hot metal temperature,T_hm,C,1480,,,placeholder,
+Maximum skull thickness,S_MAX,m,0.60,,,modelling choice,Geometric cap
+Base wear rate with skull,BASE_WEAR,m/year,0.05,,,placeholder,
+Wear multiplier without skull,EXPOSED_FACTOR,-,4,,,modelling choice,
+Conductivity scenario variation,-,fraction,+/-15%,,,modelling choice,Deliberate model mismatch vs nominal values in the physics loss
+Thermocouple noise,sigma,C,1.5,,,placeholder,To be estimated from Mendeley channels in Week 3
+Dropout probability per day,p_dropout,-,0.01,,,placeholder,To be estimated from Mendeley channels in Week 3
