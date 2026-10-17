@@ -1,17 +1,22 @@
-parameter,symbol,unit,value_in_simulator,literature_range,source,status,notes
-Initial carbon block thickness,L0,m,1.00,,,placeholder,Hearth sidewall carbon thickness - check typical designs
-Minimum remaining thickness,L_MIN,m,0.40,,,modelling choice,Keeps thermocouples inside refractory
-Thermocouple depths from cold face,TC_POS,m,"0.10; 0.20; 0.30",,,placeholder,Check typical thermocouple spacing in hearth sidewalls
-Carbon block conductivity,k_c,W/m.K,15,,,placeholder,Depends on grade and temperature - give a range and run sensitivity
-Skull (solidified iron) conductivity,k_s,W/m.K,30,,,placeholder,
-Stave + cooling water resistance,R_cool,m2.K/W,0.02,,,placeholder,
-Iron solidification isotherm,T_SOL,C,1150,,,placeholder,Boundary of protective skull - confirm in papers
-Cooling water temperature,T_water,C,40,,,placeholder,
-Effective hot-face heat transfer coefficient,h,W/m2.K,60,,,TUNED - not measured,Tuned so skull forms as lining thins - must justify or replace using literature
-Hot metal temperature,T_hm,C,1480,,,placeholder,
-Maximum skull thickness,S_MAX,m,0.60,,,modelling choice,Geometric cap
-Base wear rate with skull,BASE_WEAR,m/year,0.05,,,placeholder,
-Wear multiplier without skull,EXPOSED_FACTOR,-,4,,,modelling choice,
-Conductivity scenario variation,-,fraction,+/-15%,,,modelling choice,Deliberate model mismatch vs nominal values in the physics loss
-Thermocouple noise,sigma,C,1.5,,,placeholder,To be estimated from Mendeley channels in Week 3
-Dropout probability per day,p_dropout,-,0.01,,,placeholder,To be estimated from Mendeley channels in Week 3
+parameter,symbol,unit,value_in_simulator_v2,literature_range,source,status,notes
+Carbon block conductivity,k_c,W/m.K,13 to 35 (random per furnace),12 to 37 depending on grade (13.2-37 across six Nippon Steel grades; 12 at 400 C in a used Ternium carbon cold face; 31.8-36.4 at 600 C for a micro-pore brick patent),"Nitta & Hatakeyama, Nippon Steel Tech. Report 415 (2020); Ternium BF2 post-mortem (ABM Proceedings); patent CN102432316B",sourced range,Varies with grade and temperature; temperature dependence not modelled
+Ceramic wall conductivity,k_cer,W/m.K,5 (+/-20%),"a patent states microporous ceramic below 7, preferably below 5 (bottom lining)",patent EP2652158,ASSUMPTION,No value found for Sialon-bonded corundum wall; find a datasheet
+Skull (solidified iron) conductivity,k_s,W/m.K,30 (+/-15%),,,ASSUMPTION,No source found yet
+Wear-surface isotherm / skull boundary,T_SOL,C,1150,1150 (wear surface); 800 C when brittle layers form; 800-900 C isotherm moved inside ceramic cup,"Kaymak et al., COMSOL Conf. Lausanne 2018; Boumahdi et al., AISTech 2017",sourced,Report should define the label via the 1150 C isotherm
+Hot metal temperature,T_hm,C,"1480 (+/-12 drift, upsets +15 to +40)",1400 to 1600,"Boumahdi et al., AISTech 2017",sourced range,Mendeley file has no hot metal temperature
+Initial wall: global refractory wall,GRW0,m,1.58 to 2.42 (random),1.58 to 2.42,"Boumahdi et al., AISTech 2017",sourced,Full wall now modelled (ceramic + carbon)
+Initial wall: ceramic wall,CER0,m,0.40 to 0.50 (random),0.40 to 0.50,"Boumahdi et al., AISTech 2017",sourced,Carbon thickness = GRW minus ceramic
+Normal whole-wall wear rate,cer_rate,mm/year,16 to 38 (random per furnace),"16 to 38, median 28 (10 monitored zones with more than 0.1 m loss)","Derived by verify_wear_rates.py from tables in Boumahdi et al., AISTech 2017",derived from sourced tables,"Values are thermocouple-model estimates, not dissection measurements. BF4 at 7.5 yr instead of 8 gives 29-39."
+Wear with a skull present,-,factor,"0.5 on ceramic, 0.3 on carbon",,,ASSUMPTION,Only a qualitative basis (stable solidified layer protects the lining)
+Carbon wear once ceramic is gone,carb_rate,m/year,0.3 to 1.2 (random),over 400 mm of carbon lost in a few months at one weak point (Dunkerque BF4),"Boumahdi et al., AISTech 2017",ASSUMPTION informed by one event,"Real event was local; skull present in most simulated cup-gone days, so this regime is rarely at full speed"
+Carbon wear stops at,CARBON_MIN,m,0.70,,,modelling choice,Keeps thermocouples inside carbon; wear plateaus here
+Share of furnaces starting with ceramic gone,P_CUP_GONE,-,0.30,,,scenario choice,Not a real frequency
+Skull cap,S_MAX,m,0.30,build-up above initial thickness of 0.26 m and 0.07 m at two levels of Dunkerque BF4,"Boumahdi et al., AISTech 2017",ASSUMPTION near two data points,"Skull sits at the cap for much of the time in thin-wall furnaces, so the skull label saturates"
+Skull growth / melt rate,-,m/day,"growth 0.003, melt 0.015",,,ASSUMPTION,Fixes the instant-skull problem; find literature rates
+Effective hot-side heat transfer coefficient,h_eff,W/m2.K,20 to 40 (random),,,TUNED - not measured,Tuned so skull is present on about 50% of days; upsets multiply it by 1.8 to 3.0
+Backing resistance (ramming + stave + water),R_back,m2.K/W,0.02,,,ASSUMPTION,"Planned split into gap, stave and water film"
+Cooling water temperature,T_water,C,40 (+/-3),,,ASSUMPTION,No source found yet
+Thermocouple depths from cold face,TC_POS,m,0.2; 0.4; 0.6,real hearths have many thermocouples at several elevations (Dunkerque 2.4-4.4 m; Fos-sur-Mer 5.3-11.2 m),"Boumahdi et al., AISTech 2017",ASSUMPTION / simplified,One wall slice only
+Thermocouple noise,sigma,C,1.5,,,ASSUMPTION,Estimate from real sensor data in Week 3
+Dropout probability per day,p_dropout,-,0.01 (1 to 5 days each),,,ASSUMPTION,Estimate from Mendeley fault patterns in Week 3
+Real operating data (Mendeley),-,-,not yet used,"29,602 hourly rows, 1 Jan 2013 to 18 May 2016",Mendeley Data: Process data collected by blast-furnace sensors,to use in Week 3,No lining temperatures. Temperature columns contain extreme values such as 3311 and -3241 that look like fault codes - confirm.
