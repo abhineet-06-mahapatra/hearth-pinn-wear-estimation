@@ -12,7 +12,7 @@ Real-data anchors (see parameters.csv for sources):
   * carbon block conductivity 12-37 W/m.K (Nippon Steel Tech. Report 415; Ternium post-mortem)
   * hot metal 1400-1600 C; wear surface at the 1150 C isotherm (Kaymak et al. 2018)
 
-ASSUMPTIONS / TUNED (not from sources): k_cer, k_s, R_back, T_water, h_eff, skull
+ASSUMPTIONS / TUNED (not from sources): k_cer, R_back, T_water, h_eff, skull
 growth and melt rates, skull cap, the protective effect of a skull on wear, thermocouple depths.
 
 Skull: its target thickness comes from the heat balance with h_eff, but the actual
@@ -31,7 +31,7 @@ T_WATER_NOM = 40.0             # C, ASSUMPTION
 R_BACK = 0.02                  # m2K/W ramming + stave + water, ASSUMPTION
 K_C_RANGE = (13.0, 35.0)       # W/mK carbon, inside the real 12-37 range
 K_CER_NOM = 5.0                # W/mK ceramic wall, ASSUMPTION (low-k ceramic, patent says <7)
-K_S_NOM = 30.0                 # W/mK skull, ASSUMPTION
+K_S_NOM = 2.0                  # W/mK skull; value used for the skull layer by Helle et al. 2022 (MMTB 53(1))
 H_EFF_RANGE = (20.0, 40.0)     # W/m2K EFFECTIVE hot-side coefficient, TUNED so skull is present on roughly 40% of days
 S_MAX = 0.30                   # m skull cap (observed build-up 0.07-0.26 m), ASSUMPTION
 S_GROW = 0.003                 # m/day, ASSUMPTION
