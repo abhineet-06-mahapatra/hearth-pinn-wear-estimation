@@ -53,6 +53,22 @@ def ar1(n, mean, sd, phi, rng):
     return x
 
 
+def skull_target(T_hm, T_w, h, R_rest, k_s):
+    """Skull thickness (m) at which the skull hot face sits at T_SOL, clipped to [0, S_MAX]."""
+    raw = k_s * ((T_SOL - T_w) / (h * (T_hm - T_SOL)) - R_rest)
+    return float(np.clip(raw, 0.0, S_MAX))
+
+
+def heat_flux(T_hm, T_w, h, s, k_s, R_rest):
+    """Steady heat flux (W/m2) through film, skull and the rest of the wall."""
+    return (T_hm - T_w) / (1.0 / h + s / k_s + R_rest)
+
+
+def tc_temps(T_w, q, k_c):
+    """Thermocouple temperatures (C) at TC_POS metres from the cold face of the carbon."""
+    return T_w + q * (R_BACK + TC_POS / k_c)
+
+
 def simulate_scenario(seed):
     rng = np.random.default_rng(seed)
     n = N_DAYS
@@ -82,11 +98,10 @@ def simulate_scenario(seed):
     for t in range(n):
         R_rest = cer / k_cer + carb / k_c + R_BACK
         # target skull from the heat balance at the solidification isotherm
-        target = k_s * ((T_SOL - T_w[t]) / (h[t] * (T_hm[t] - T_SOL)) - R_rest)
-        target = float(np.clip(target, 0.0, S_MAX))
+        target = skull_target(T_hm[t], T_w[t], h[t], R_rest, k_s)
         s += float(np.clip(target - s, -S_MELT, S_GROW))   # rate-limited skull
-        q = (T_hm[t] - T_w[t]) / (1.0 / h[t] + s / k_s + R_rest)
-        tc = T_w[t] + q * (R_BACK + TC_POS / k_c)
+        q = heat_flux(T_hm[t], T_w[t], h[t], s, k_s, R_rest)
+        tc = tc_temps(T_w[t], q, k_c)
         regime = 0 if cer > 0.0 else 1
         rows.append([seed, t, *tc, cer + carb, cer, carb, s, q, T_hm[t], h[t], T_w[t], k_c, k_cer, regime])
         protected = s > SKULL_THRESHOLD
