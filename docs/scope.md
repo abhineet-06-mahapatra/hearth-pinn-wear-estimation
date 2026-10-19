@@ -29,6 +29,6 @@ Can a neural network that is trained with heat-transfer physics estimate the rem
 - It is not real-time monitoring: it replays simulated histories.
 
 ## Known limitations so far
-- The skull rule relies on a tuned hot-side heat transfer coefficient (20 to 40 W/m2.K) that is well below a published value of about 120. With the published value no skull forms, so the skull mechanism is the weakest part of the model.
+- The skull rule relies on a tuned hot-side heat transfer coefficient (20 to 40 W/m2.K) for which no published value was found, so the skull mechanism is the least well supported part of the model.
 - Normal wear moves the sensors only by tens of degrees over two years, which is comparable to operating variation.
 - The skull-growth rates, the protective effect of a skull on wear and the effective heat transfer coefficient are assumptions. Skull conductivity (2 W/m.K) comes from one published study.
