@@ -151,3 +151,39 @@ def test_sensor_effects_noise_and_dropouts():
     assert err.std() == pytest.approx(1.5, rel=0.1)
     assert 0.002 < noisy.TC2.isna().mean() < 0.08
     assert noisy.TC2_true.notna().all()                       # truth is never damaged
+
+
+# ---------------- Group 4: flow regimes (added in Week 2) ----------------
+def test_regimes_are_zero_or_one_and_both_occur():
+    seen = set()
+    for seed in range(20):
+        r = sim.make_regimes(sim.N_DAYS, np.random.default_rng(seed))
+        assert len(r) == sim.N_DAYS
+        assert set(np.unique(r)) <= {0, 1}
+        seen |= set(np.unique(r))
+    assert seen == {0, 1}
+
+
+def test_regime_spells_are_not_shorter_than_minimum():
+    for seed in range(20):
+        r = sim.make_regimes(sim.N_DAYS, np.random.default_rng(seed))
+        change = np.flatnonzero(np.diff(r)) + 1            # first day of each new spell
+        starts = np.concatenate([[0], change, [len(r)]])
+        lengths = np.diff(starts)
+        assert (lengths[:-1] >= sim.REGIME_MIN_DAYS).all()  # last spell may be cut by the window
+
+
+def test_h_values_follow_regime_ranges(furnaces):
+    for d in furnaces:
+        stag = d.h_eff[d.flow_regime == 0]
+        act = d.h_eff[d.flow_regime == 1]
+        if len(stag) > 30:
+            assert sim.H_STAG_RANGE[0] * 0.85 <= stag.median() <= sim.H_STAG_RANGE[1] * 1.15
+        if len(act) > 30:
+            assert sim.H_ACT_RANGE[0] * 0.85 <= act.median() <= sim.H_ACT_RANGE[1] * 1.15
+
+
+def test_skull_is_thinner_in_active_flow(furnaces):
+    import pandas as pd
+    d = pd.concat(furnaces)
+    assert d.skull_m[d.flow_regime == 1].mean() < d.skull_m[d.flow_regime == 0].mean()

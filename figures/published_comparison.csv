@@ -1,0 +1,8 @@
+quantity,unit,published_low,published_high,published_note,sim_p5,sim_p50,sim_p95,verdict
+Sidewall heat flux,kW/m2,8.1,17.4,"risk-band boundaries at one furnace (AIP Adv. 10, 025308); critical values 9.4-57 across 13 furnaces",5.59,8.385,16.989,median inside published range
+Skull thickness when present (above 0.05 m),m,0.07,0.26,"build-up above original thickness at two levels (Boumahdi et al., AISTech 2017); only two data points",0.054,0.107,0.256,median inside published range
+Ceramic-wall wear rate (furnaces keeping ceramic),mm/year,16.0,38.0,derived from field tables (verify_wear_rates.py); thermocouple-model estimates,12.602,22.983,35.595,median inside published range
+Hot metal temperature,C,1400.0,1600.0,"range quoted by Boumahdi et al.; Processes 11(2), 531 studied about 1442-1559 C",1460.44,1480.458,1501.932,median inside published range
+Thinnest carbon reached,m,0.248,0.475,"end-of-life residual carbon (Metals 13(8), 1371; ISIJ sidewall erosion study)",0.7,0.7,0.7,simulator does NOT reach end-of-life thickness (floor 0.70 m)
+Time to melt a full skull,days,,30.0,a majority of the skull melted within about one month (Helle et al. 2022),,20.0,,consistent in order of magnitude (set by S_MAX / S_MELT)
+Thermocouple temperature (TC1 / TC2 / TC3 medians),C,,,no verified published values yet (fill TABLE4_TC_C),277.0,348.0,420.0,NOT VERIFIED

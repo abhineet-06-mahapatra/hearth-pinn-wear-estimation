@@ -17,6 +17,8 @@ growth and melt rates, skull cap, the protective effect of a skull on wear, ther
 
 Skull: its target thickness comes from the heat balance with h_eff, but the actual
 skull moves toward the target at limited speeds (grows slowly, melts faster).
+h_eff switches between a stagnant-flow value (skull can form) and an active-flow value
+(skull melts); spells last weeks to months. These two values and the spell lengths are assumptions.
 
 Run:  python simulator/hearth_simulator_v2.py
 """
@@ -32,7 +34,10 @@ R_BACK = 0.02                  # m2K/W ramming + stave + water, ASSUMPTION
 K_C_RANGE = (13.0, 35.0)       # W/mK carbon, inside the real 12-37 range
 K_CER_NOM = 5.0                # W/mK ceramic wall, ASSUMPTION (low-k ceramic, patent says <7)
 K_S_NOM = 2.0                  # W/mK skull; value used for the skull layer by Helle et al. 2022 (MMTB 53(1))
-H_EFF_RANGE = (20.0, 40.0)     # W/m2K EFFECTIVE hot-side coefficient, TUNED so skull is present on roughly 40% of days
+H_STAG_RANGE = (15.0, 30.0)    # W/m2K effective hot-side coefficient, STAGNANT flow (skull can form), ASSUMPTION/TUNED
+H_ACT_RANGE = (45.0, 80.0)     # W/m2K effective hot-side coefficient, ACTIVE flow (skull melts), ASSUMPTION/TUNED
+REGIME_MEAN_DAYS = (90.0, 45.0)  # mean length of stagnant, active spells (days), ASSUMPTION; skull cycles last weeks to months (Helle et al. 2022)
+REGIME_MIN_DAYS = 7            # shortest spell, days
 S_MAX = 0.30                   # m skull cap (observed build-up 0.07-0.26 m), ASSUMPTION
 S_GROW = 0.003                 # m/day, ASSUMPTION
 S_MELT = 0.015                 # m/day, ASSUMPTION
@@ -51,6 +56,20 @@ def ar1(n, mean, sd, phi, rng):
     for i in range(1, n):
         x[i] = mean + phi * (x[i - 1] - mean) + e[i]
     return x
+
+
+def make_regimes(n, rng):
+    """Hot-metal flow regime for each day: 0 = stagnant (skull can form), 1 = active (skull melts).
+    Spell lengths are exponential with the means in REGIME_MEAN_DAYS (an assumption)."""
+    out = np.empty(n, dtype=int)
+    state = int(rng.integers(0, 2))
+    i = 0
+    while i < n:
+        d = max(REGIME_MIN_DAYS, int(rng.exponential(REGIME_MEAN_DAYS[state])))
+        out[i:i + d] = state
+        i += d
+        state = 1 - state
+    return out
 
 
 def skull_target(T_hm, T_w, h, R_rest, k_s):
@@ -86,7 +105,9 @@ def simulate_scenario(seed):
     carb_rate = rng.uniform(*CARBON_RATE_M_YR)           # m/year (used once ceramic is gone)
     # operating conditions
     T_hm = ar1(n, T_HM_NOM, 12.0, 0.95, rng)
-    h = np.clip(ar1(n, rng.uniform(*H_EFF_RANGE), 2.0, 0.97, rng), 6.0, None)
+    flow = make_regimes(n, rng)
+    h_stag, h_act = rng.uniform(*H_STAG_RANGE), rng.uniform(*H_ACT_RANGE)
+    h = np.where(flow == 0, h_stag, h_act) * (1.0 + 0.05 * ar1(n, 0.0, 1.0, 0.9, rng))
     T_w = np.clip(ar1(n, T_WATER_NOM, 3.0, 0.9, rng), 20, None)
     for _ in range(rng.integers(1, 5)):                  # upsets
         i0 = rng.integers(30, n - 30); d = rng.integers(3, 15)
@@ -102,8 +123,8 @@ def simulate_scenario(seed):
         s += float(np.clip(target - s, -S_MELT, S_GROW))   # rate-limited skull
         q = heat_flux(T_hm[t], T_w[t], h[t], s, k_s, R_rest)
         tc = tc_temps(T_w[t], q, k_c)
-        regime = 0 if cer > 0.0 else 1
-        rows.append([seed, t, *tc, cer + carb, cer, carb, s, q, T_hm[t], h[t], T_w[t], k_c, k_cer, regime])
+        cup_gone = 0 if cer > 0.0 else 1
+        rows.append([seed, t, *tc, cer + carb, cer, carb, s, q, T_hm[t], h[t], T_w[t], k_c, k_cer, cup_gone, flow[t]])
         protected = s > SKULL_THRESHOLD
         noise = rng.uniform(0.5, 1.5)
         if cer > 0.0:
@@ -115,7 +136,7 @@ def simulate_scenario(seed):
 
     cols = ["scenario", "day"] + [f"TC{i+1}_true" for i in range(len(TC_POS))] + \
            ["remaining_m", "ceramic_m", "carbon_m", "skull_m", "heat_flux_Wm2", "T_hotmetal",
-            "h_eff", "T_water", "k_c_true", "k_cer_true", "cup_gone"]
+            "h_eff", "T_water", "k_c_true", "k_cer_true", "cup_gone", "flow_regime"]
     return pd.DataFrame(rows, columns=cols)
 
 
