@@ -1,0 +1,9 @@
+case,change_in_TC3_C,note
+Reference TC3 reading,333.9,
+100 mm of carbon worn away,6.1,wear signal per 100 mm (carbon)
+100 mm of ceramic worn away,26.1,wear signal per 100 mm (ceramic)
+Carbon conductivity 13 -> 35 W/m.K,-82.5,equal to 1348 mm of carbon wear
+Skull 0.20 m melts away (same flow),125.2,equal to 2044 mm of carbon wear
+Backing resistance 0.02 -> 0.0083,-57.5,"shifts absolute readings, not the wear trend"
+"Skull melts with flow change, thick wall",175.3,ceramic 0.30 m + carbon 1.50 m
+"Skull melts with flow change, thin wall",579.1,"carbon 0.80 m, no ceramic"
