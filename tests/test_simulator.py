@@ -187,3 +187,42 @@ def test_skull_is_thinner_in_active_flow(furnaces):
     import pandas as pd
     d = pd.concat(furnaces)
     assert d.skull_m[d.flow_regime == 1].mean() < d.skull_m[d.flow_regime == 0].mean()
+
+
+# ---------------- Group 5: the 1150 C isotherm label (added in Week 2) ----------------
+def test_isotherm_hand_calculation_in_ceramic():
+    """Worked example: carbon cold face 187.7 C, carbon end 741.5 C, ceramic end 1184.6 C,
+    so the 1150 C line lies inside the ceramic at 1.5 + 0.3 x (1150-741.5)/(1184.6-741.5) = 1.7766 m."""
+    q = sim.heat_flux(T_HM, T_W, H, S, K_S, R_REST)
+    x = sim.isotherm_distance(T_W, q, K_C, CARB, K_CER, CER, S, K_S)
+    assert x == pytest.approx(1.7766, abs=1e-3)
+
+
+def test_isotherm_inside_carbon_when_flux_is_high():
+    q = 30000.0
+    t0 = T_W + q * sim.R_BACK
+    expected = K_C * (sim.T_SOL - t0) / q
+    assert sim.isotherm_distance(T_W, q, K_C, CARB, K_CER, CER, 2.0, 2.0) == pytest.approx(expected, rel=1e-9)
+
+
+def test_isotherm_returns_total_thickness_when_stack_is_cold():
+    x = sim.isotherm_distance(T_W, 2000.0, K_C, CARB, K_CER, CER, 0.1, 2.0)
+    assert x == pytest.approx(CARB + CER + 0.1, rel=1e-9)
+
+
+def test_isotherm_moves_toward_cold_face_when_wall_thins():
+    def iso(carb):
+        r = CER / K_CER + carb / K_C + sim.R_BACK
+        q = sim.heat_flux(T_HM, T_W, H, 0.0, K_S, r)
+        return sim.isotherm_distance(T_W, q, K_C, carb, K_CER, CER, 0.0, K_S)
+    assert iso(1.0) < iso(1.5)
+
+
+def test_isotherm_label_in_dataset_is_sensible(furnaces):
+    import pandas as pd
+    d = pd.concat(furnaces)
+    assert "iso1150_m" in d.columns
+    assert d.iso1150_m.notna().all()
+    assert (d.iso1150_m > 0).all()
+    assert (d.iso1150_m <= d.remaining_m + d.skull_m + 1e-9).all()      # never beyond the solid stack
+    assert np.corrcoef(d.iso1150_m, d.remaining_m)[0, 1] > 0.8          # tracks the remaining wall

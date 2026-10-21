@@ -88,6 +88,22 @@ def tc_temps(T_w, q, k_c):
     return T_w + q * (R_BACK + TC_POS / k_c)
 
 
+def isotherm_distance(T_w, q, k_c, carb, k_cer, cer, s, k_s, t_sol=None):
+    """Distance (m) from the carbon cold face to the 1150 C isotherm, working through carbon,
+    ceramic and skull in turn with the same heat flux q. If the whole stack is colder than
+    t_sol, the total thickness (carbon + ceramic + skull) is returned."""
+    t_sol = T_SOL if t_sol is None else t_sol
+    x, T = 0.0, T_w + q * R_BACK
+    for L, k in ((carb, k_c), (cer, k_cer), (s, k_s)):
+        if L <= 0.0:
+            continue
+        T_end = T + q * L / k
+        if T_end >= t_sol:
+            return x + L * (t_sol - T) / (T_end - T)
+        x, T = x + L, T_end
+    return x
+
+
 def simulate_scenario(seed):
     rng = np.random.default_rng(seed)
     n = N_DAYS
@@ -123,8 +139,9 @@ def simulate_scenario(seed):
         s += float(np.clip(target - s, -S_MELT, S_GROW))   # rate-limited skull
         q = heat_flux(T_hm[t], T_w[t], h[t], s, k_s, R_rest)
         tc = tc_temps(T_w[t], q, k_c)
+        iso = isotherm_distance(T_w[t], q, k_c, carb, k_cer, cer, s, k_s)
         cup_gone = 0 if cer > 0.0 else 1
-        rows.append([seed, t, *tc, cer + carb, cer, carb, s, q, T_hm[t], h[t], T_w[t], k_c, k_cer, cup_gone, flow[t]])
+        rows.append([seed, t, *tc, cer + carb, cer, carb, s, q, T_hm[t], h[t], T_w[t], k_c, k_cer, cup_gone, flow[t], iso])
         protected = s > SKULL_THRESHOLD
         noise = rng.uniform(0.5, 1.5)
         if cer > 0.0:
@@ -136,7 +153,7 @@ def simulate_scenario(seed):
 
     cols = ["scenario", "day"] + [f"TC{i+1}_true" for i in range(len(TC_POS))] + \
            ["remaining_m", "ceramic_m", "carbon_m", "skull_m", "heat_flux_Wm2", "T_hotmetal",
-            "h_eff", "T_water", "k_c_true", "k_cer_true", "cup_gone", "flow_regime"]
+            "h_eff", "T_water", "k_c_true", "k_cer_true", "cup_gone", "flow_regime", "iso1150_m"]
     return pd.DataFrame(rows, columns=cols)
 
 
