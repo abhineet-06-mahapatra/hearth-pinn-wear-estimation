@@ -43,7 +43,7 @@ readings), `heat_flux_Wm2`, `T_hotmetal`, `h_eff`, `T_water`, `k_c_true`, `k_cer
 `data/dataset_manifest.json` lists the furnace seeds of every split, the columns, the software versions and a SHA-256
 checksum of each file (computed on values rounded to 4 decimals). Commit the manifest, not the CSV files, and tag the commit
 `dataset-v1`. If a regenerated file has a different checksum, the data has changed.
-Checksums depend on the NumPy version, so they are only comparable on the same software versions.
+Checksums can differ between machines even when every summary statistic agrees, because tiny floating-point differences change the fourth decimal of a few values. Treat the checksum as a guard against accidental changes on one machine, and compare summary statistics (rows, medians, shares) across machines.
 
 ## Known limitations
 Simulated data; several parameters are assumptions (see `parameters.csv`); sensor faults are modelled on a proxy;

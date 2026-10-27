@@ -178,7 +178,7 @@
     199
    ],
    "rows": 102200,
-   "sha256": "22cb063e4b5d399a0971ca3677365eab6ea74917c63e65228502f946b32b2840"
+   "sha256": "4da46c9f8aad68ae22b1ebdeea2305575df306a4df0cfbd38deffb836f6778a9"
   },
   "val": {
    "furnace_seeds": [
@@ -214,7 +214,7 @@
     195
    ],
    "rows": 21900,
-   "sha256": "848ee8d0f816250be1754136d62fe3528d16547811acb9f8ca40b4a774313ee2"
+   "sha256": "98d12ac7acf0092a430e6cacbc0beb78975f2f92add63fc37ab05ec3d2e13835"
   },
   "test": {
    "furnace_seeds": [
@@ -250,7 +250,7 @@
     197
    ],
    "rows": 21900,
-   "sha256": "c2a38c2ae53b3a1b5ad3a66fc8230b69d6198de02796851ae22431674f923771"
+   "sha256": "f742c0518051a66bb04a75ae76f50a3c9fa9854e50579bc175566c5aba0fd869"
   },
   "test_ood": {
    "furnace_seeds": [
@@ -276,7 +276,7 @@
     1019
    ],
    "rows": 14600,
-   "sha256": "4b2651a43a956a55531aa81d583fd6fe04039b69d5e8588f6eb6a72c45733c14"
+   "sha256": "e6b13f98adc90a160054816cd3d205ec889fe7a3a8b901b4f98caa294dc1a952"
   }
  }
 }

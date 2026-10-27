@@ -40,3 +40,17 @@ Over 20 furnaces the transient TC3 reading differs from the steady-state reading
 - Heat capacities of carbon (2.0e6), ceramic (3.0e6) and skull (3.5e6) J/m3.K are assumptions with no source yet.
 - When a layer changes thickness its cells stretch and keep their temperatures, which does not conserve heat
   exactly across that change (small for slow wear).
+
+## Swing check (added 27 October)
+Measured on the generated training data (change in the true TC3 reading over 7 days):
+
+| Furnaces | Median change | Weeks above 200 C | Largest |
+|---|---|---|---|
+| Ceramic wall present | 7 C | 0.3% | 319 C |
+| Ceramic wall gone (active flow 45 to 80) | 23 C | 8.3% | about 600 C |
+| Ceramic wall gone (active flow 35 to 55, now used) | 22 C | 4.1% | about 580 C |
+
+One published thermal-model study reports erosion-zone sensors rising by about 22 to 26% for a tapping temperature rise of about
+117 K. Before the change, 4.8% of weeks in furnaces without the ceramic wall rose by more than 26% (in kelvin). The change roughly
+halves the very large swings but does not remove them: the largest ones come from upsets that coincide with an active-flow spell
+in a thin wall. The active-flow range is an assumption and is recorded as such in parameters.csv.

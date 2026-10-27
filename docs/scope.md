@@ -29,7 +29,7 @@ Can a neural network that is trained with heat-transfer physics estimate the rem
 - It is not real-time monitoring: it replays simulated histories.
 
 ## Known limitations so far
-- The skull depends on two assumed hot-side heat transfer coefficients (stagnant flow 15 to 30, active flow 45 to 80 W/m2.K) and assumed spell lengths. The idea that flow regimes control the skull has qualitative support in the literature, but no published values were found for these numbers, so the skull mechanism is the least well supported part of the model.
+- The skull depends on two assumed hot-side heat transfer coefficients (stagnant flow 15 to 30, active flow 35 to 55 W/m2.K) and assumed spell lengths. The idea that flow regimes control the skull has qualitative support in the literature, but no published values were found for these numbers, so the skull mechanism is the least well supported part of the model.
 - Normal wear moves the sensors only by tens of degrees over two years, which is comparable to operating variation.
 - Three temperature readings cannot separate three layer thicknesses when conductivities also vary (see docs/findings_week2.md). The project therefore estimates the total remaining wall, the skull and the distance to the 1150 C isotherm.
 - The skull-growth rates, the protective effect of a skull on wear and the effective heat transfer coefficient are assumptions. Skull conductivity (2 W/m.K) comes from one published study.
