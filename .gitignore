@@ -224,3 +224,5 @@ hearth_synthetic.csv
 hearth_synthetic_v2.csv
 
 hearth_synthetic_v2.csv
+
+data/*.csv
