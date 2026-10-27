@@ -42,11 +42,12 @@ def build_grid(carb, cer, s, k_c, k_cer, k_s):
     return dx, k, rcp
 
 
-def implicit_step(T, dx, k, rcp, T_w, T_hm, h, dt):
+def implicit_step(T, dx, k, rcp, T_w, T_hm, h, dt, r_back=None):
     """Advance cell temperatures by dt. Returns (new T, heat flux to the water, heat flux from the hot metal)."""
     n = len(T)
     G = 1.0 / (dx[:-1] / (2 * k[:-1]) + dx[1:] / (2 * k[1:]))          # between cells
-    Gc = 1.0 / (sim.R_BACK + dx[0] / (2 * k[0]))                         # cold face to water
+    rb = sim.R_BACK if r_back is None else r_back
+    Gc = 1.0 / (rb + dx[0] / (2 * k[0]))                         # cold face to water
     Gh = 1.0 / (1.0 / h + dx[-1] / (2 * k[-1]))                          # hot metal to hot face
     C = rcp * dx / dt
     diag = C.copy()
@@ -65,10 +66,10 @@ def implicit_step(T, dx, k, rcp, T_w, T_hm, h, dt):
     return T_new, Gc * (T_new[0] - T_w), Gh * (T_hm - T_new[-1])
 
 
-def steady_state(dx, k, rcp, T_w, T_hm, h):
+def steady_state(dx, k, rcp, T_w, T_hm, h, r_back=None):
     """Steady temperatures for the grid (an implicit step with an infinite time step, so heat capacity drops out)."""
     T0 = np.full(len(dx), 0.5 * (T_w + T_hm))
-    T, _, _ = implicit_step(T0, dx, k, rcp, T_w, T_hm, h, np.inf)
+    T, _, _ = implicit_step(T0, dx, k, rcp, T_w, T_hm, h, np.inf, r_back)
     return T
 
 
@@ -78,11 +79,12 @@ def thermocouples(T, dx):
     return np.interp(sim.TC_POS, centres, T)
 
 
-def isotherm_from_profile(T, dx, T_w, T_hm, h, q_out, q_in):
+def isotherm_from_profile(T, dx, T_w, T_hm, h, q_out, q_in, r_back=None):
     """Distance from the carbon cold face to the 1150 C isotherm from the cell temperatures."""
     centres = np.cumsum(dx) - dx / 2
     xs = np.concatenate([[0.0], centres, [dx.sum()]])
-    Ts = np.concatenate([[T_w + q_out * sim.R_BACK], T, [T_hm - q_in / h]])
+    rb = sim.R_BACK if r_back is None else r_back
+    Ts = np.concatenate([[T_w + q_out * rb], T, [T_hm - q_in / h]])
     above = np.flatnonzero(Ts >= sim.T_SOL)
     if len(above) == 0:
         return float(dx.sum())
@@ -113,6 +115,7 @@ def simulate_scenario_transient(seed):
     k_c = rng.uniform(*sim.K_C_RANGE)
     k_cer = sim.K_CER_NOM * rng.uniform(0.8, 1.2)
     k_s = sim.K_S_NOM * rng.uniform(0.85, 1.15)
+    r_back = rng.uniform(*sim.R_BACK_RANGE)
     grw0 = rng.uniform(1.58, 2.42)
     cer0 = rng.uniform(0.40, 0.50)
     carb0 = grw0 - cer0
@@ -135,20 +138,20 @@ def simulate_scenario_transient(seed):
     T = None
     rows = []
     for t in range(n):
-        R_rest = cer / k_cer + carb / k_c + sim.R_BACK
+        R_rest = cer / k_cer + carb / k_c + r_back
         target = sim.skull_target(T_hm[t], T_w[t], h[t], R_rest, k_s)
         s += float(np.clip(target - s, -sim.S_MELT, sim.S_GROW))
         dx, k, rcp = build_grid(carb, cer, s, k_c, k_cer, k_s)
         if T is None:
-            T = steady_state(dx, k, rcp, T_w[t], T_hm[t], h[t])
+            T = steady_state(dx, k, rcp, T_w[t], T_hm[t], h[t], r_back)
         for _ in range(SUBSTEPS):
-            T, q_out, q_in = implicit_step(T, dx, k, rcp, T_w[t], T_hm[t], h[t], DT)
+            T, q_out, q_in = implicit_step(T, dx, k, rcp, T_w[t], T_hm[t], h[t], DT, r_back)
         tc = thermocouples(T, dx)
         q_ss = sim.heat_flux(T_hm[t], T_w[t], h[t], s, k_s, R_rest)
-        tc_ss = sim.tc_temps(T_w[t], q_ss, k_c)
-        iso = isotherm_from_profile(T, dx, T_w[t], T_hm[t], h[t], q_out, q_in)
+        tc_ss = sim.tc_temps(T_w[t], q_ss, k_c, r_back)
+        iso = isotherm_from_profile(T, dx, T_w[t], T_hm[t], h[t], q_out, q_in, r_back)
         cup_gone = 0 if cer > 0.0 else 1
-        rows.append([seed, t, *tc, *tc_ss, cer + carb, cer, carb, s, q_out, T_hm[t], h[t], T_w[t], k_c, k_cer, cup_gone, flow[t], iso])
+        rows.append([seed, t, *tc, *tc_ss, cer + carb, cer, carb, s, q_out, T_hm[t], h[t], T_w[t], k_c, k_cer, cup_gone, flow[t], iso, r_back])
         protected = s > sim.SKULL_THRESHOLD
         noise = rng.uniform(0.5, 1.5)
         if cer > 0.0:
@@ -158,7 +161,7 @@ def simulate_scenario_transient(seed):
 
     cols = ["scenario", "day"] + [f"TC{i + 1}_true" for i in range(3)] + [f"TC{i + 1}_ss" for i in range(3)] + \
            ["remaining_m", "ceramic_m", "carbon_m", "skull_m", "heat_flux_Wm2", "T_hotmetal", "h_eff", "T_water",
-            "k_c_true", "k_cer_true", "cup_gone", "flow_regime", "iso1150_m"]
+            "k_c_true", "k_cer_true", "cup_gone", "flow_regime", "iso1150_m", "r_back_true"]
     return pd.DataFrame(rows, columns=cols)
 
 

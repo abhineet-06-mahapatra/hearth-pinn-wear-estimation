@@ -54,3 +54,15 @@ One published thermal-model study reports erosion-zone sensors rising by about 2
 117 K. Before the change, 4.8% of weeks in furnaces without the ceramic wall rose by more than 26% (in kelvin). The change roughly
 halves the very large swings but does not remove them: the largest ones come from upsets that coincide with an active-flow spell
 in a thin wall. The active-flow range is an assumption and is recorded as such in parameters.csv.
+
+## Decisions on 27 October (before the freeze)
+- **Backing resistance:** each furnace now draws its own value between 0.0083 and 0.020 m2.K/W. The lower bound is the
+  equivalent cooling-side coefficient (120 W/m2.K) used in one published model; the upper bound is the earlier assumption.
+  It shifts all three readings equally, so differences between sensors are unaffected, and it gives the physics-informed model
+  a realistic mismatch to cope with. The nominal value for baselines and the physics loss is 0.0142.
+- **Splits:** balanced on ceramic wall present or gone at the start and on thick or thin starting wall. A first, purely random
+  split gave a test set with a median wall of 1.39 m against 1.78 m for validation, which would have made validation
+  scores a poor guide to test scores.
+
+Effect on the training data (140 furnaces): heat flux 5.8 / 8.4 / 14.0 kW/m2 (5th / 50th / 95th); true sensor medians 227 / 299 / 370 C;
+skull present on 40% of days; weeks with a TC3 change above 200 C in furnaces without the ceramic wall: 2.2% (largest 577 C).

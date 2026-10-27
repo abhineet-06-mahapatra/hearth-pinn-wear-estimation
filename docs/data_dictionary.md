@@ -11,8 +11,9 @@ the sensor fault model measured in Week 3 and a fixed set of random seeds. Every
 | test.csv | 30 | 21,900 | final scores, looked at once |
 | test_ood.csv | 20 | 14,600 | stress test: carbon conductivity 38 to 45 W/m.K, above the 13 to 35 range seen in training |
 
-Each furnace is 730 daily rows. The 200 in-range furnaces are split 70 / 15 / 15 with a fixed permutation
-(split seed 2026). The out-of-range furnaces use seeds 1000 to 1019. 38 to 45 is a stress test, not a real carbon grade.
+Each furnace is 730 daily rows. The 200 in-range furnaces are split 70 / 15 / 15 with a fixed random shuffle (split seed 2026),
+balanced on two furnace types so that every split has a similar mix: ceramic wall present or gone at day 0, and thick or thin
+starting wall. Without this, a 30-furnace split can differ a lot from another by chance. The out-of-range furnaces use seeds 1000 to 1019. 38 to 45 is a stress test, not a real carbon grade.
 
 ## Columns
 **Identifiers:** `scenario` (furnace number), `day` (0 to 729).
@@ -32,7 +33,8 @@ Each furnace is 730 daily rows. The 200 in-range furnaces are split 70 / 15 / 15
 
 **Diagnostics (analysis only, NEVER model inputs, they would leak the answer):**
 `TC1_true`, `TC2_true`, `TC3_true` (readings without noise or outages), `TC1_ss`, `TC2_ss`, `TC3_ss` (steady-state
-readings), `heat_flux_Wm2`, `T_hotmetal`, `h_eff`, `T_water`, `k_c_true`, `k_cer_true`, `cup_gone`, `flow_regime`.
+readings), `heat_flux_Wm2`, `T_hotmetal`, `h_eff`, `T_water`, `k_c_true`, `k_cer_true`, `r_back_true` (this furnace's backing
+resistance), `cup_gone`, `flow_regime`.
 
 ## Rules
 1. Never tune anything on `test.csv` or `test_ood.csv`. Look at them once, at the end.

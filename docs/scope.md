@@ -15,7 +15,7 @@ Can a neural network that is trained with heat-transfer physics estimate the rem
 ## What is real and what is simulated
 - **Simulated:** all thermocouple readings and all layer thicknesses. No real hearth thermocouple data was available.
 - **From published sources:** initial wall dimensions, normal wear rates (16 to 38 mm/year, derived from field tables), carbon block conductivity range, hot metal temperature range, the 1150 C wear-surface isotherm. See `parameters.csv` for the source of each value.
-- **Assumed or tuned:** ceramic conductivity, backing resistance, water temperature, the effective hot-side heat transfer coefficient, skull growth and melt rates, thermocouple depths. Each is marked in `parameters.csv`.
+- **Assumed or tuned:** ceramic conductivity, backing resistance (a range of 0.0083 to 0.020 m2.K/W per furnace), water temperature, the effective hot-side heat transfer coefficient, skull growth and melt rates, thermocouple depths. Each is marked in `parameters.csv`.
 - **Real plant data (Mendeley):** to be used only for realistic operating variation and sensor-fault patterns, not as lining data.
 
 ## Success criteria

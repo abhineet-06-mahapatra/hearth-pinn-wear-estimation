@@ -10,14 +10,28 @@ import make_dataset as md  # noqa: E402
 
 @pytest.fixture(scope="module")
 def small():
-    return md.build_all(n_in=10, n_ood=2)
+    return md.build_all(n_in=40, n_ood=2)
 
 
 def test_splits_are_disjoint_and_complete():
-    s = md.assign_splits(200)
-    seeds = [x for k in ("train", "val", "test") for x in s[k]]
+    strata = {s: s % 4 for s in range(200)}
+    sp = md.assign_splits(strata)
+    seeds = [x for k in ("train", "val", "test") for x in sp[k]]
     assert len(seeds) == 200 and len(set(seeds)) == 200
-    assert (len(s["train"]), len(s["val"]), len(s["test"])) == (140, 30, 30)
+    assert 128 <= len(sp["train"]) <= 152 and 24 <= len(sp["val"]) <= 36 and 24 <= len(sp["test"]) <= 36
+
+
+def test_each_stratum_is_spread_across_the_splits():
+    strata = {s: s % 4 for s in range(200)}
+    sp = md.assign_splits(strata)
+    for stratum in range(4):
+        for name in ("train", "val", "test"):
+            assert any(strata[s] == stratum for s in sp[name])
+
+
+def test_split_assignment_is_deterministic():
+    strata = {s: s % 4 for s in range(200)}
+    assert md.assign_splits(strata) == md.assign_splits(strata)
 
 
 def test_no_furnace_appears_in_two_splits(small):

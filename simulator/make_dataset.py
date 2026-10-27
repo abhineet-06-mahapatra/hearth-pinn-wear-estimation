@@ -8,7 +8,8 @@ Writes data/train.csv, val.csv, test.csv, test_ood.csv and data/dataset_manifest
 The CSV files are large and are not committed to Git; commit only the manifest.
 
 Splits
-  train, val, test : furnaces drawn from the same ranges (70% / 15% / 15% of 200 furnaces)
+  train, val, test : furnaces drawn from the same ranges (about 70% / 15% / 15% of 200 furnaces), balanced
+                     on ceramic wall present or gone at the start and on thick or thin starting wall
   test_ood         : 20 furnaces whose carbon conductivity is ABOVE the real range (38 to 45 W/m.K
                      against 13 to 35 in training). It tests whether a model copes with conditions it
                      has never seen. 38 to 45 is a stress test, not a real carbon grade.
@@ -36,7 +37,7 @@ INPUT_COLUMNS = ["TC1", "TC2", "TC3"]
 LABEL_COLUMNS = ["remaining_m", "ceramic_m", "carbon_m", "skull_m", "iso1150_m"]
 # kept for analysis only: using any of these as model input would leak the answer
 DIAGNOSTIC_COLUMNS = ["TC1_true", "TC2_true", "TC3_true", "TC1_ss", "TC2_ss", "TC3_ss", "heat_flux_Wm2",
-                      "T_hotmetal", "h_eff", "T_water", "k_c_true", "k_cer_true", "cup_gone", "flow_regime"]
+                      "T_hotmetal", "h_eff", "T_water", "k_c_true", "k_cer_true", "r_back_true", "cup_gone", "flow_regime"]
 ID_COLUMNS = ["scenario", "day"]
 
 
@@ -44,20 +45,38 @@ def make_furnace(seed):
     return sim.add_sensor_effects(tr.simulate_scenario_transient(seed), seed)
 
 
-def assign_splits(n_in=200, split_seed=SPLIT_SEED, fractions=(0.70, 0.15)):
-    perm = np.random.default_rng(split_seed).permutation(n_in)
-    n_train, n_val = int(round(fractions[0] * n_in)), int(round(fractions[1] * n_in))
-    return {"train": sorted(int(s) for s in perm[:n_train]),
-            "val": sorted(int(s) for s in perm[n_train:n_train + n_val]),
-            "test": sorted(int(s) for s in perm[n_train + n_val:])}
+def assign_splits(strata, split_seed=SPLIT_SEED, fractions=(0.70, 0.15)):
+    """Split furnaces into train / val / test (about 70 / 15 / 15), keeping each stratum balanced.
+    strata: dict {furnace seed: stratum label}. Within every stratum the furnaces are shuffled with a
+    fixed seed and dealt out in proportion, so each split gets a similar mix of furnace types."""
+    rng = np.random.default_rng(split_seed)
+    out = {"train": [], "val": [], "test": []}
+    for label in sorted(set(strata.values())):
+        seeds = sorted(s for s, lab in strata.items() if lab == label)
+        order = [int(x) for x in rng.permutation(seeds)]
+        n = len(order)
+        n_val = int(round(fractions[1] * n))
+        n_test = int(round((1.0 - fractions[0] - fractions[1]) * n))
+        out["val"] += order[:n_val]
+        out["test"] += order[n_val:n_val + n_test]
+        out["train"] += order[n_val + n_test:]
+    return {k: sorted(v) for k, v in out.items()}
+
+
+def stratum_of(furnace_df, median_wall):
+    """Furnace type: ceramic wall present or gone at day 0, and thick or thin starting wall."""
+    first = furnace_df.iloc[0]
+    return f"cup{int(first.cup_gone)}_{'thick' if first.remaining_m >= median_wall else 'thin'}"
 
 
 def build_all(n_in=200, n_ood=20, verbose=False):
-    splits = assign_splits(n_in)
-    frames = {}
-    for name, seeds in splits.items():
-        frames[name] = pd.concat([make_furnace(s) for s in seeds], ignore_index=True)
-        if verbose:
+    furnaces = {s: make_furnace(s) for s in range(n_in)}
+    median_wall = float(np.median([f.remaining_m.iloc[0] for f in furnaces.values()]))
+    strata = {s: stratum_of(f, median_wall) for s, f in furnaces.items()}
+    splits = assign_splits(strata)
+    frames = {name: pd.concat([furnaces[s] for s in seeds], ignore_index=True) for name, seeds in splits.items()}
+    if verbose:
+        for name, seeds in splits.items():
             print(f"  {name}: {len(seeds)} furnaces")
     old = sim.K_C_RANGE
     sim.K_C_RANGE = OOD_K_C_RANGE
@@ -78,7 +97,7 @@ def checksum(df):
 
 def manifest(splits, frames):
     return {
-        "split_seed": SPLIT_SEED,
+        "split_seed": SPLIT_SEED, "split_rule": "stratified by ceramic wall present or gone at day 0 and by thick or thin starting wall; about 70/15/15",
         "inputs": INPUT_COLUMNS, "labels": LABEL_COLUMNS, "diagnostic_columns_do_not_use_as_inputs": DIAGNOSTIC_COLUMNS,
         "software": {"python": platform.python_version(), "numpy": np.__version__, "pandas": pd.__version__},
         "splits": {name: {"furnace_seeds": splits[name], "rows": int(len(frames[name])), "sha256": checksum(frames[name])}
@@ -92,6 +111,7 @@ def summary(frames):
         rows.append(dict(split=name, furnaces=d.scenario.nunique(), rows=len(d),
                          missing_TC_share=round(float(d[INPUT_COLUMNS].isna().mean().mean()), 4),
                          k_c_min=round(float(d.k_c_true.min()), 1), k_c_max=round(float(d.k_c_true.max()), 1),
+                         ceramic_gone_at_start=round(float(d.groupby('scenario').cup_gone.first().mean()), 2),
                          skull_present=round(float((d.skull_m > 0.05).mean()), 2),
                          remaining_median=round(float(d.remaining_m.median()), 2),
                          iso_median=round(float(d.iso1150_m.median()), 2)))

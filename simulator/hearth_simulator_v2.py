@@ -30,7 +30,9 @@ N_DAYS = 730
 T_SOL = 1150.0                 # C, wear-surface isotherm (Kaymak 2018)
 T_HM_NOM = 1480.0              # C, inside 1400-1600 (Boumahdi 2017)
 T_WATER_NOM = 40.0             # C, ASSUMPTION
-R_BACK = 0.02                  # m2K/W ramming + stave + water, ASSUMPTION
+R_BACK = 0.02                  # m2K/W reference value, used when no per-furnace value is given
+R_BACK_RANGE = (0.0083, 0.020) # m2K/W per-furnace range: 0.0083 = published equivalent cooling coefficient of 120 W/m2K (one model), 0.020 = earlier assumption
+R_BACK_NOMINAL = 0.0142        # m2K/W mid-point, for baselines and the physics loss
 K_C_RANGE = (13.0, 35.0)       # W/mK carbon, inside the real 12-37 range
 K_CER_NOM = 5.0                # W/mK ceramic wall, ASSUMPTION (low-k ceramic, patent says <7)
 K_S_NOM = 2.0                  # W/mK skull; value used for the skull layer by Helle et al. 2022 (MMTB 53(1))
@@ -83,17 +85,18 @@ def heat_flux(T_hm, T_w, h, s, k_s, R_rest):
     return (T_hm - T_w) / (1.0 / h + s / k_s + R_rest)
 
 
-def tc_temps(T_w, q, k_c):
+def tc_temps(T_w, q, k_c, r_back=None):
     """Thermocouple temperatures (C) at TC_POS metres from the cold face of the carbon."""
-    return T_w + q * (R_BACK + TC_POS / k_c)
+    rb = R_BACK if r_back is None else r_back
+    return T_w + q * (rb + TC_POS / k_c)
 
 
-def isotherm_distance(T_w, q, k_c, carb, k_cer, cer, s, k_s, t_sol=None):
+def isotherm_distance(T_w, q, k_c, carb, k_cer, cer, s, k_s, t_sol=None, r_back=None):
     """Distance (m) from the carbon cold face to the 1150 C isotherm, working through carbon,
     ceramic and skull in turn with the same heat flux q. If the whole stack is colder than
     t_sol, the total thickness (carbon + ceramic + skull) is returned."""
     t_sol = T_SOL if t_sol is None else t_sol
-    x, T = 0.0, T_w + q * R_BACK
+    x, T = 0.0, T_w + q * (R_BACK if r_back is None else r_back)
     for L, k in ((carb, k_c), (cer, k_cer), (s, k_s)):
         if L <= 0.0:
             continue
@@ -111,6 +114,7 @@ def simulate_scenario(seed):
     k_c = rng.uniform(*K_C_RANGE)
     k_cer = K_CER_NOM * rng.uniform(0.8, 1.2)
     k_s = K_S_NOM * rng.uniform(0.85, 1.15)
+    r_back = rng.uniform(*R_BACK_RANGE)
     # starting wall (real ranges)
     grw0 = rng.uniform(1.58, 2.42)
     cer0 = rng.uniform(0.40, 0.50)
@@ -133,15 +137,15 @@ def simulate_scenario(seed):
     s = 0.0
     rows = []
     for t in range(n):
-        R_rest = cer / k_cer + carb / k_c + R_BACK
+        R_rest = cer / k_cer + carb / k_c + r_back
         # target skull from the heat balance at the solidification isotherm
         target = skull_target(T_hm[t], T_w[t], h[t], R_rest, k_s)
         s += float(np.clip(target - s, -S_MELT, S_GROW))   # rate-limited skull
         q = heat_flux(T_hm[t], T_w[t], h[t], s, k_s, R_rest)
-        tc = tc_temps(T_w[t], q, k_c)
-        iso = isotherm_distance(T_w[t], q, k_c, carb, k_cer, cer, s, k_s)
+        tc = tc_temps(T_w[t], q, k_c, r_back)
+        iso = isotherm_distance(T_w[t], q, k_c, carb, k_cer, cer, s, k_s, r_back=r_back)
         cup_gone = 0 if cer > 0.0 else 1
-        rows.append([seed, t, *tc, cer + carb, cer, carb, s, q, T_hm[t], h[t], T_w[t], k_c, k_cer, cup_gone, flow[t], iso])
+        rows.append([seed, t, *tc, cer + carb, cer, carb, s, q, T_hm[t], h[t], T_w[t], k_c, k_cer, cup_gone, flow[t], iso, r_back])
         protected = s > SKULL_THRESHOLD
         noise = rng.uniform(0.5, 1.5)
         if cer > 0.0:
@@ -153,7 +157,7 @@ def simulate_scenario(seed):
 
     cols = ["scenario", "day"] + [f"TC{i+1}_true" for i in range(len(TC_POS))] + \
            ["remaining_m", "ceramic_m", "carbon_m", "skull_m", "heat_flux_Wm2", "T_hotmetal",
-            "h_eff", "T_water", "k_c_true", "k_cer_true", "cup_gone", "flow_regime", "iso1150_m"]
+            "h_eff", "T_water", "k_c_true", "k_cer_true", "cup_gone", "flow_regime", "iso1150_m", "r_back_true"]
     return pd.DataFrame(rows, columns=cols)
 
 
