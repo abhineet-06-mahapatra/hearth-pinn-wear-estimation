@@ -157,13 +157,31 @@ def simulate_scenario(seed):
     return pd.DataFrame(rows, columns=cols)
 
 
-def add_sensor_effects(df, seed, sigma=1.5, p_dropout=0.01):
+def dropout_mask(n, p_start, p_long, rng):
+    """True on days a sensor is out. Events start with probability p_start per day; most last about a
+    day (median 1 day, lognormal), and a small share (p_long) last 8 to 21 days. Shapes follow the
+    fault study in docs/sensor_fault_study.md (a proxy: upper-furnace gas temperature sensors)."""
+    mask = np.zeros(n, dtype=bool)
+    for i in np.flatnonzero(rng.random(n) < p_start):
+        if rng.random() < p_long:
+            length = int(rng.integers(8, 22))
+        else:
+            length = int(np.clip(round(rng.lognormal(0.0, 0.54)), 1, 30))
+        mask[i:i + length] = True
+    return mask
+
+
+def add_sensor_effects(df, seed, sigma=1.5, p_dropout=0.003, p_long=0.02, p_common=0.001):
+    """Noise plus dropouts on the thermocouple columns.
+    p_dropout: chance per day that one sensor starts an outage; p_long: share of outages that are long;
+    p_common: chance per day of an outage that hits all three sensors at once."""
     rng = np.random.default_rng(seed + 10_000)
     out = df.copy()
+    n = len(df)
+    common = dropout_mask(n, p_common, 0.0, rng)
     for c in [c for c in df.columns if c.endswith("_true") and c.startswith("TC")]:
-        x = df[c].to_numpy() + rng.normal(0, sigma, len(df))
-        for i in np.where(rng.random(len(df)) < p_dropout)[0]:
-            x[i:i + rng.integers(1, 6)] = np.nan
+        x = df[c].to_numpy() + rng.normal(0, sigma, n)
+        x[dropout_mask(n, p_dropout, p_long, rng) | common] = np.nan
         out[c.replace("_true", "")] = x
     return out
 
