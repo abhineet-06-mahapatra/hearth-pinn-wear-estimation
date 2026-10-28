@@ -47,6 +47,12 @@ checksum of each file (computed on values rounded to 4 decimals). Commit the man
 `dataset-v1`. If a regenerated file has a different checksum, the data has changed.
 Checksums can differ between machines even when every summary statistic agrees, because tiny floating-point differences change the fourth decimal of a few values. Treat the checksum as a guard against accidental changes on one machine, and compare summary statistics (rows, medians, shares) across machines.
 
+## How labels may be used (added in Week 4)
+Besides absolute values, labels can be expressed as the change since day 0 (for example `skull_m` minus its day-0 value).
+A model may then also use each furnace's own early readings (for example the median of its first 10 days) as a reference input,
+which assumes the starting state is known from commissioning or an inspection. Both are derived from the existing columns, so
+the frozen CSV files do not change. Findings in `docs/findings_week4.md` explain why this form is easier.
+
 ## Known limitations
 Simulated data; several parameters are assumptions (see `parameters.csv`); sensor faults are modelled on a proxy;
 the heat capacities used for the time lag are unsourced; the carbon floor of 0.70 m means end-of-life wall thicknesses are not covered.

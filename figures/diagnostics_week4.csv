@@ -1,0 +1,21 @@
+experiment,inputs,model,remaining_m,iso1150_m,skull_m,d_rem,d_iso,d_skull
+"A absolute value, single day",sensors only,ridge,0.15,0.32,0.01,,,
+"A absolute value, single day",sensors only,gbm,0.13,0.27,0.23,,,
+"A absolute value, single day",+ carbon conductivity,ridge,0.18,0.34,0.02,,,
+"A absolute value, single day",+ carbon conductivity,gbm,-0.61,-0.37,-0.38,,,
+"A absolute value, single day",+ conductivities + backing resistance,ridge,0.19,0.35,0.08,,,
+"A absolute value, single day",+ conductivities + backing resistance,gbm,-0.26,0.07,0.01,,,
+"A absolute value, single day",+ hot-side film resistance,ridge,0.28,0.39,0.22,,,
+"A absolute value, single day",+ hot-side film resistance,gbm,0.15,0.26,0.26,,,
+"A absolute value, single day",+ everything above,ridge,0.35,0.43,0.29,,,
+"A absolute value, single day",+ everything above,gbm,-0.08,0.13,0.02,,,
+"B change since start, single day",readings (level),ridge,,,,0.01,0.31,0.02
+"B change since start, single day",readings (level),gbm,,,,-0.16,0.11,0.23
+"B change since start, single day",change since start,ridge,,,,0.31,0.26,0.63
+"B change since start, single day",change since start,gbm,,,,0.04,0.06,0.76
+"C change since start, with history",today only,ridge,,,,-0.03,-0.02,0.66
+"C change since start, with history",today only,gbm,,,,0.03,-0.0,0.75
+"C change since start, with history",+ 30-day history,ridge,,,,0.08,0.05,0.66
+"C change since start, with history",+ 30-day history,gbm,,,,0.15,0.15,0.81
+"C change since start, with history",+ 30 and 90-day history,ridge,,,,0.16,0.12,0.67
+"C change since start, with history",+ 30 and 90-day history,gbm,,,,0.14,0.13,0.83
