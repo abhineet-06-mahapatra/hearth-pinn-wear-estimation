@@ -108,7 +108,7 @@ def r2_per_target(y, p):
 def main(argv):
     arg = lambda k, d: type(d)(argv[argv.index(k) + 1]) if k in argv else d
     quick = "--quick" in argv
-    n_seeds, length, hidden = arg("--seeds", 1 if quick else 3), arg("--length", 60), arg("--hidden", 16 if quick else 32)
+    n_seeds, length, hidden = arg("--seeds", 1 if quick else 3), arg("--length", 60), arg("--hidden", 16 if quick else 64)
     epochs = arg("--epochs", 5 if quick else 40)
     frames = {n: pd.read_csv(os.path.join("data", f"{n}.csv")) for n in ("train", "val")}      # test sets are never loaded
     if quick:
