@@ -99,3 +99,23 @@ def test_sensor_with_no_reference_is_flagged_missing_for_the_whole_furnace():
     assert (X[:, :, 8] == 1.0).all()                                      # TC3 flagged missing in every window
     assert np.isnan(X[:, :, [2, 5]]).all()                                # its change and level channels are unusable
     assert np.isfinite(X[:, :, [0, 1, 3, 4]]).all()                       # the other sensors are untouched
+
+
+def test_day_zero_labels_are_returned_and_consistent():
+    f = toy(days=100)
+    w = wd.build_windows(f, length=30, stride=10)
+    assert w["y0"].shape == w["y"].shape
+    assert np.allclose(w["y0"], f[wd.TARGETS].iloc[0].to_numpy())          # the same day-0 label in every window of a furnace
+    assert np.allclose(w["y0"] + w["y"], w["y_abs"])
+
+
+def test_pair_index_links_consecutive_windows_of_the_same_furnace_only():
+    df = pd.concat([toy(1, days=100, seed=1), toy(2, days=100, seed=2)], ignore_index=True)
+    w = wd.build_windows(df, length=30, stride=10)
+    nxt = wd.pair_index(w["scenario"], w["day"], stride=10)
+    for i, j in enumerate(nxt):
+        if j >= 0:
+            assert w["scenario"][j] == w["scenario"][i] and w["day"][j] == w["day"][i] + 10
+    last = [i for i in range(len(nxt)) if i == len(nxt) - 1 or w["scenario"][i + 1] != w["scenario"][i]]
+    assert all(nxt[i] == -1 for i in last)                                  # the last window of each furnace has no next one
+    assert (nxt >= 0).sum() == len(nxt) - 2

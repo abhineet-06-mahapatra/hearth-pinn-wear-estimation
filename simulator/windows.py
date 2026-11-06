@@ -48,8 +48,18 @@ def build_windows(df, length=60, stride=5):
     for sid, f in df.groupby("scenario"):
         X, y, ya, days = furnace_windows(f, length, stride)
         Xs.append(X); ys.append(y); yas.append(ya); sc.append(np.full(len(X), sid)); dd.append(days)
-    return {"X": np.concatenate(Xs), "y": np.concatenate(ys), "y_abs": np.concatenate(yas),
+    y, y_abs = np.concatenate(ys), np.concatenate(yas)
+    return {"X": np.concatenate(Xs), "y": y, "y_abs": y_abs, "y0": y_abs - y,
             "scenario": np.concatenate(sc), "day": np.concatenate(dd)}
+
+
+def pair_index(scenario, day, stride=5):
+    """For each window, the index of the NEXT window of the same furnace (its end day is `stride` days later), or -1 if none.
+    Used to compare predictions on consecutive windows, for example to penalise a wall that seems to grow back."""
+    nxt = np.full(len(scenario), -1, dtype=int)
+    same = (scenario[:-1] == scenario[1:]) & (day[1:] - day[:-1] == stride)
+    nxt[:-1][same] = np.flatnonzero(same) + 1
+    return nxt
 
 
 def fit_scaler(X):
